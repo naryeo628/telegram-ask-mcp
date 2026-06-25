@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+
+# 비밀(절대 커밋 금지) — 토큰은 MCP 클라이언트 env 로만 주입
+.env
+*.token
+secrets*

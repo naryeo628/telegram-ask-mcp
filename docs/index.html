@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>telegram-ask-mcp</title>
+<meta name="description" content="Claude가 선택지를 물을 때 텔레그램으로 질문을 보내고 폰에서 받은 답을 돌려주는 MCP 서버.">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --border:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --accent:#229ED2; --accent2:#58a6ff;
+    --code:#0b0e14; --green:#3fb950; --tg:#229ED2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--fg);line-height:1.6}
+  .wrap{max-width:860px;margin:0 auto;padding:64px 20px 96px}
+  h1{font-size:2.5rem;margin:0 0 6px;letter-spacing:-.5px}
+  h1 .tg{color:var(--tg)}
+  .tag{color:var(--muted);font-size:1.08rem;margin-bottom:14px}
+  .badges{margin-bottom:30px;display:flex;gap:8px;flex-wrap:wrap}
+  .badge{display:inline-block;font-size:.75rem;color:var(--green);border:1px solid var(--green);
+    border-radius:20px;padding:2px 10px}
+  .badge.b2{color:var(--tg);border-color:var(--tg)}
+  .badge.b3{color:var(--muted);border-color:var(--border)}
+  h2{font-size:1.25rem;margin:46px 0 14px;border-bottom:1px solid var(--border);padding-bottom:8px}
+  h3{font-size:1rem;margin:22px 0 8px;color:var(--tg)}
+  p{color:var(--fg)}
+  .muted{color:var(--muted)}
+  .lead{font-size:1.12rem;background:var(--panel);border:1px solid var(--border);
+    border-left:3px solid var(--tg);border-radius:10px;padding:16px 18px;margin:24px 0}
+  .install{display:flex;gap:8px;align-items:stretch;background:var(--code);
+    border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin:8px 0}
+  .install code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88rem;
+    color:var(--fg);overflow-x:auto;white-space:nowrap;flex:1;display:flex;align-items:center}
+  .install code .p{color:var(--tg)}
+  button.copy{background:var(--tg);color:#fff;border:0;border-radius:8px;padding:8px 14px;
+    font-weight:600;cursor:pointer;white-space:nowrap}
+  button.copy:hover{filter:brightness(1.1)}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:10px;
+    padding:16px;overflow-x:auto}
+  code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  pre code{color:#c9d1d9;font-size:.86rem}
+  ul,ol{padding-left:22px}
+  li{margin:6px 0}
+  table{border-collapse:collapse;width:100%;margin-top:8px}
+  th,td{border:1px solid var(--border);padding:8px 12px;text-align:left;font-size:.9rem;vertical-align:top}
+  th{background:var(--panel)}
+  td code{color:var(--accent2)}
+  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px}
+  .card b{color:var(--tg)}
+  .flow{counter-reset:step;list-style:none;padding:0;margin-top:12px}
+  .flow li{counter-increment:step;position:relative;padding:12px 0 12px 46px;border-bottom:1px solid var(--border)}
+  .flow li:last-child{border-bottom:0}
+  .flow li::before{content:counter(step);position:absolute;left:0;top:11px;width:30px;height:30px;
+    background:var(--tg);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem}
+  footer{margin-top:56px;color:var(--muted);font-size:.85rem;border-top:1px solid var(--border);padding-top:18px}
+  a{color:var(--accent2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .warn{background:#2d2410;border:1px solid #5c4813;border-radius:8px;padding:12px 16px;color:#e8d8a8;font-size:.9rem;margin:12px 0}
+  .danger{background:#2d1518;border:1px solid #5c2128;border-radius:8px;padding:12px 16px;color:#f3b4b4;font-size:.9rem;margin:12px 0}
+  /* 텔레그램 미리보기 말풍선 */
+  .chat{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin-top:16px;max-width:420px}
+  .bubble{background:#182634;border:1px solid #21364a;border-radius:12px;padding:12px 14px;font-size:.92rem;white-space:pre-line}
+  .kb{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+  .kb button{background:#21364a;color:#cfe8fb;border:1px solid #2b4c68;border-radius:8px;padding:9px;font-size:.9rem;text-align:center;cursor:default}
+  .reply{align-self:flex-end;background:#2b5278;border-color:#356199;margin-top:8px;margin-left:auto;color:#eaf4fd}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><span class="tg">telegram</span>-ask-mcp</h1>
+  <div class="tag">Claude가 선택지를 물을 때 — 터미널 대신 <b>텔레그램</b>으로 묻고, 폰에서 받은 답을 돌려주는 MCP 서버</div>
+  <div class="badges">
+    <span class="badge">MCP · stdio</span>
+    <span class="badge b2">Python · FastMCP</span>
+    <span class="badge b3">의존성 없음 (stdlib + mcp)</span>
+    <span class="badge b3">MIT</span>
+  </div>
+
+  <div class="lead">자리에 없어도 폰으로 Claude의 질문에 답하고 작업을 계속 진행시킨다.
+  Claude가 <code>ask_via_telegram</code> 도구를 호출하면 질문이 텔레그램으로 오고,
+  버튼을 누르거나 번호·자유 텍스트로 답하면 그 답이 Claude로 전달된다.</div>
+
+  <div class="chat">
+    <div class="bubble">❓ 어느 방식으로 배포할까요?
+
+  1. 블루-그린
+  2. 카나리
+  3. 롤링
+
+👉 버튼을 누르거나 번호를 보내세요. 다른 답은 직접 입력해도 됩니다.
+      <div class="kb">
+        <button>1. 블루-그린</button>
+        <button>2. 카나리</button>
+        <button>3. 롤링</button>
+      </div>
+    </div>
+    <div class="bubble reply">2</div>
+  </div>
+
+  <h2>동작 흐름</h2>
+  <ol class="flow">
+    <li>Claude가 <code>ask_via_telegram(question, options)</code> 호출</li>
+    <li>서버가 질문 + <b>번호 인라인 버튼</b>을 텔레그램으로 전송</li>
+    <li>사용자가 <b>버튼 탭</b> / <b>번호 입력</b> / <b>자유 텍스트</b>로 응답</li>
+    <li>서버가 <code>getUpdates</code> long-poll로 응답을 받아 Claude에 반환</li>
+    <li>약 10분 안에 답이 없으면 <code>timeout</code> 반환 → Claude는 평소처럼 터미널에서 재질문</li>
+  </ol>
+
+  <div class="warn">⚠️ <b>왜 기존 팝업을 자동으로 못 가로채나:</b> MCP 서버는 다른 도구(Claude 내장
+  AskUserQuestion)를 후킹할 수 없다. 그래서 "묻기" 전용 도구를 만들고, Claude가 질문 상황에서 이
+  도구를 쓰도록 메모리/규칙으로 유도한다.</div>
+
+  <h2>도구</h2>
+  <div class="feat">
+    <div class="card"><b>ask_via_telegram</b><div class="muted">질문 전송 후 답 받을 때까지 대기. answer / via(button·text) / option_index / is_custom, 또는 timeout 반환.</div></div>
+    <div class="card"><b>notify_telegram</b><div class="muted">답을 기다리지 않는 단방향 알림. 작업 완료·승인요청 안내 등.</div></div>
+    <div class="card"><b>check_config</b><div class="muted">봇 연결(getMe)·대상 chat_id 점검. 토큰 값은 노출하지 않음.</div></div>
+  </div>
+
+  <h2>설치</h2>
+  <div class="install">
+    <code><span class="p">$</span>&nbsp;git clone https://github.com/naryeo628/telegram-ask-mcp &amp;&amp; cd telegram-ask-mcp &amp;&amp; uv tool install .</code>
+    <button class="copy" onclick="cp(this)">복사</button>
+  </div>
+  <p class="muted"><code>~/.local/bin/telegram-ask-mcp</code> 실행 파일이 생긴다.</p>
+
+  <h3>Claude Code 등록 (<code>~/.claude.json</code>, user 스코프)</h3>
+<pre><code>{
+  "mcpServers": {
+    "telegram-ask": {
+      "command": "/Users/&lt;you&gt;/.local/bin/telegram-ask-mcp",
+      "env": {
+        "TELEGRAM_BOT_TOKEN": "&lt;봇 토큰 — 절대 레포에 커밋 금지&gt;",
+        "TELEGRAM_CHAT_ID": "&lt;본인 chat_id&gt;"
+      }
+    }
+  }
+}</code></pre>
+  <p class="muted">등록 후 Claude Code 재시작 → 도구 로드. <code>check_config()</code>로 연결 확인.</p>
+
+  <h2>환경변수</h2>
+  <table>
+    <tr><th>변수</th><th>기본</th><th>설명</th></tr>
+    <tr><td><code>TELEGRAM_BOT_TOKEN</code></td><td>(필수)</td><td>BotFather 봇 토큰. <b>비밀</b></td></tr>
+    <tr><td><code>TELEGRAM_CHAT_ID</code></td><td>(필수)</td><td>질문 받을 대상 chat_id</td></tr>
+    <tr><td><code>TELEGRAM_ASK_WAIT_SEC</code></td><td><code>600</code></td><td>전체 응답 대기 한도(초)</td></tr>
+    <tr><td><code>TELEGRAM_ASK_POLL_SEC</code></td><td><code>50</code></td><td>1회 long-poll 길이(초)</td></tr>
+  </table>
+
+  <h2>"항상 텔레그램으로 묻기" 규칙</h2>
+  <p>Claude가 선택지를 물 상황마다 이 도구를 쓰게 하려면, 유저/프로젝트 메모리나 <code>CLAUDE.md</code>에 적어 둔다:</p>
+  <pre><code>사용자에게 선택지를 물어야 할 때는 터미널 팝업 대신 telegram-ask 의
+ask_via_telegram 를 먼저 호출한다. timeout 이 오면 그때 터미널에서 다시 묻는다.</code></pre>
+
+  <h2>보안</h2>
+  <div class="danger">봇 토큰은 <b>MCP 클라이언트 env로만</b> 주입. 레포·문서·로그·프론트에 절대 노출 금지.
+  노출 의심 시 BotFather <code>/revoke</code>로 즉시 재발급.</div>
+  <p class="muted"><code>getUpdates</code>는 한 번에 하나의 소비자만 받을 수 있어, 같은 봇으로 여러 인스턴스를
+  동시에 long-poll 하면 서로 업데이트를 가로챌 수 있다(단일 사용자 로컬 환경 기준 설계).</p>
+
+  <footer>
+    <a href="https://github.com/naryeo628/telegram-ask-mcp">GitHub</a> · MIT ·
+    made by naryeo628
+  </footer>
+</div>
+<script>
+function cp(btn){
+  var code=btn.parentElement.querySelector('code').innerText.replace(/^\$\s*/,'');
+  navigator.clipboard.writeText(code).then(function(){
+    var t=btn.innerText; btn.innerText='복사됨'; setTimeout(function(){btn.innerText=t;},1200);
+  });
+}
+</script>
+</body>
+</html>
