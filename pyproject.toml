@@ -1,6 +1,6 @@
 [project]
 name = "telegram-ask-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "Claude가 선택지를 물을 때 텔레그램으로 질문을 보내고 사용자의 답(버튼/번호/자유텍스트)을 받아오는 MCP 서버"
 readme = "README.md"
 requires-python = ">=3.10"
