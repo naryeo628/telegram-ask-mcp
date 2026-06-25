@@ -38,30 +38,45 @@ uv tool install .        # ~/.local/bin/telegram-ask-mcp 생성
 
 ### Claude Code 등록 (`~/.claude.json`, user 스코프)
 
+**토큰을 설정에 직접 안 적는 방식(권장)** — 기존 비밀 파일을 가리키기만 한다:
+
 ```jsonc
 {
   "mcpServers": {
     "telegram-ask": {
       "command": "/Users/<you>/.local/bin/telegram-ask-mcp",
       "env": {
-        "TELEGRAM_BOT_TOKEN": "<봇 토큰 — 절대 레포에 커밋 금지>",
-        "TELEGRAM_CHAT_ID": "<본인 chat_id>"
+        "TELEGRAM_ENV_FILE": "/Users/<you>/secrets.env"
       }
     }
   }
 }
 ```
 
+`TELEGRAM_ENV_FILE` 은 `KEY=VALUE`(또는 `export KEY="VALUE"`) 라인을 가진 파일이면 된다 —
+쉘 스크립트도 OK. 그 안의 `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` 를 읽는다.
+
+리터럴로 직접 적고 싶으면 기존처럼 `"TELEGRAM_BOT_TOKEN": "...", "TELEGRAM_CHAT_ID": "..."` 를 써도 된다.
+
 등록 후 Claude Code 재시작 → 도구 로드. `check_config()` 로 연결 확인.
 
 ### 환경변수
 
+토큰/chat_id 는 **리터럴 → 개별 파일 → 공유 env 파일** 순으로 먼저 잡히는 값을 쓴다.
+셋 중 하나로만 주입하면 된다.
+
 | 변수 | 기본 | 설명 |
 |------|------|------|
-| `TELEGRAM_BOT_TOKEN` | (필수) | BotFather 봇 토큰. **비밀** |
-| `TELEGRAM_CHAT_ID` | (필수) | 질문 받을 대상 chat_id |
+| `TELEGRAM_BOT_TOKEN` | — | (1) BotFather 봇 토큰 리터럴. **비밀** |
+| `TELEGRAM_CHAT_ID` | — | (1) 대상 chat_id 리터럴 |
+| `TELEGRAM_BOT_TOKEN_FILE` | — | (2) 토큰 **원문 1줄**이 든 파일 경로 |
+| `TELEGRAM_CHAT_ID_FILE` | — | (2) chat_id 원문 1줄 파일 경로 |
+| `TELEGRAM_ENV_FILE` | — | (3) `KEY=VALUE` 파일 경로 — 위 두 키를 파싱 |
 | `TELEGRAM_ASK_WAIT_SEC` | `600` | 전체 응답 대기 한도(초) |
 | `TELEGRAM_ASK_POLL_SEC` | `50` | 1회 long-poll 길이(초) |
+
+> 셋 중 토큰·chat_id 는 각각 최소 하나의 소스에서 잡혀야 한다(둘이 다른 소스라도 됨).
+> `TELEGRAM_ENV_FILE` 값은 서버 시작 시 1회 읽어 캐시 — 파일 바꾸면 서버 재시작.
 
 봇/chat_id 가 없으면: BotFather 로 봇 생성 → 봇에게 아무 메시지 전송 →
 `https://api.telegram.org/bot<TOKEN>/getUpdates` 의 `result[].message.chat.id`.

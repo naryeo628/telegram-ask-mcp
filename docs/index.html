@@ -128,24 +128,28 @@
   <p class="muted"><code>~/.local/bin/telegram-ask-mcp</code> 실행 파일이 생긴다.</p>
 
   <h3>Claude Code 등록 (<code>~/.claude.json</code>, user 스코프)</h3>
+  <p class="muted">토큰을 설정에 직접 안 적는 방식(권장) — 기존 비밀 파일을 가리키기만 한다:</p>
 <pre><code>{
   "mcpServers": {
     "telegram-ask": {
       "command": "/Users/&lt;you&gt;/.local/bin/telegram-ask-mcp",
       "env": {
-        "TELEGRAM_BOT_TOKEN": "&lt;봇 토큰 — 절대 레포에 커밋 금지&gt;",
-        "TELEGRAM_CHAT_ID": "&lt;본인 chat_id&gt;"
+        "TELEGRAM_ENV_FILE": "/Users/&lt;you&gt;/secrets.env"
       }
     }
   }
 }</code></pre>
-  <p class="muted">등록 후 Claude Code 재시작 → 도구 로드. <code>check_config()</code>로 연결 확인.</p>
+  <p class="muted"><code>TELEGRAM_ENV_FILE</code> 은 <code>KEY=VALUE</code>(또는 <code>export KEY="VALUE"</code>) 라인을 가진 파일이면 된다(쉘스크립트도 OK). 그 안의 <code>TELEGRAM_BOT_TOKEN</code>/<code>TELEGRAM_CHAT_ID</code> 를 읽는다. 리터럴로 직접 적어도 됨.<br>등록 후 Claude Code 재시작 → 도구 로드. <code>check_config()</code>로 연결 확인.</p>
 
   <h2>환경변수</h2>
+  <p class="muted">토큰/chat_id 는 <b>리터럴 → 개별 파일 → 공유 env 파일</b> 순으로 먼저 잡히는 값을 쓴다. 셋 중 하나로만 주입하면 된다 — 설정에 토큰을 직접 안 적고 파일만 가리킬 수 있다.</p>
   <table>
     <tr><th>변수</th><th>기본</th><th>설명</th></tr>
-    <tr><td><code>TELEGRAM_BOT_TOKEN</code></td><td>(필수)</td><td>BotFather 봇 토큰. <b>비밀</b></td></tr>
-    <tr><td><code>TELEGRAM_CHAT_ID</code></td><td>(필수)</td><td>질문 받을 대상 chat_id</td></tr>
+    <tr><td><code>TELEGRAM_BOT_TOKEN</code></td><td>—</td><td>(1) 봇 토큰 리터럴. <b>비밀</b></td></tr>
+    <tr><td><code>TELEGRAM_CHAT_ID</code></td><td>—</td><td>(1) 대상 chat_id 리터럴</td></tr>
+    <tr><td><code>TELEGRAM_BOT_TOKEN_FILE</code></td><td>—</td><td>(2) 토큰 <b>원문 1줄</b> 파일 경로</td></tr>
+    <tr><td><code>TELEGRAM_CHAT_ID_FILE</code></td><td>—</td><td>(2) chat_id 원문 1줄 파일 경로</td></tr>
+    <tr><td><code>TELEGRAM_ENV_FILE</code></td><td>—</td><td>(3) <code>KEY=VALUE</code> 파일 경로 — 위 두 키를 파싱(쉘스크립트 OK)</td></tr>
     <tr><td><code>TELEGRAM_ASK_WAIT_SEC</code></td><td><code>600</code></td><td>전체 응답 대기 한도(초)</td></tr>
     <tr><td><code>TELEGRAM_ASK_POLL_SEC</code></td><td><code>50</code></td><td>1회 long-poll 길이(초)</td></tr>
   </table>
